@@ -1,7 +1,9 @@
 #Created by Liang Sun in 2013
 import re
+import hashlib
 import logging
 import collections
+from simcache import SIMCACHE
 
 class Simhash(object):
     def __init__(self, value, f=64, reg=ur'[\w\u4e00-\u9fff]+', hashfunc=None):
@@ -22,8 +24,12 @@ class Simhash(object):
         self.value = None
 
         if hashfunc is None:
-            import hashlib
-            self.hashfunc = lambda x: int(hashlib.md5(x).hexdigest(), 16)
+            def _hashfunc(x):
+                if x in SIMCACHE:
+                    return SIMCACHE[x]
+                return int(hashlib.md5(x).hexdigest(), 16)
+
+            self.hashfunc = _hashfunc
         else:
             self.hashfunc = hashfunc
 
@@ -102,7 +108,7 @@ class SimhashIndex(object):
         for key in simhash.get_keys(self.k):
             dups = self.bucket.get(key, set())
             logging.debug('key:%s', key)
-            if len(dups) > 100:
+            if len(dups) > 200:
                 logging.warning('Big bucket found. key:%s, len:%s', key, len(dups))
 
             for dup in dups:
